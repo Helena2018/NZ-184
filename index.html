@@ -4,21 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>NZ PRV 184-Day Tracker</title>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>NZ 184-Day Tracker</title>
     <style>
-        :root { --bg: #f4f7f9; --card: #ffffff; --text: #2c3e50; --primary: #3498db; --pass: #27ae60; --fail: #e74c3c; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+        :root { --bg: #f4f7f9; --card: #ffffff; --text: #2c3e50; --primary: #3498db; --pass: #27ae60; --fail: #e74c3c; --neutral: #95a5a6; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-top: env(safe-area-inset-top); }
         .card { background: var(--card); border-radius: 12px; padding: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
         h2 { font-size: 16px; margin-top: 0; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 8px; }
-        label { font-size: 12px; color: #7f8c8d; font-weight: bold; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        label { font-size: 12px; color: #7f8c8d; font-weight: bold; display: block; margin-top: 10px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; -webkit-appearance: none; }
         button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        .days-tag { font-size: 32px; font-weight: bold; text-align: center; margin: 10px 0; }
-        .status-box { padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; text-transform: uppercase; }
+        .days-tag { font-size: 36px; font-weight: bold; text-align: center; margin: 5px 0; }
+        .status-box { padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; letter-spacing: 1px; }
         .pass { background: #e8f5e9; color: var(--pass); }
         .fail { background: #ffebee; color: var(--fail); }
+        .pending { background: #fdf6e3; color: #b58900; }
         .history-item { display: flex; justify-content: space-between; font-size: 12px; padding: 10px 0; border-bottom: 1px dashed #eee; }
-        .footer-btn { background: #bdc3c7; font-size: 12px; margin-top: 20px; }
+        .footer-btn { background: #bdc3c7; font-size: 11px; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -27,7 +29,6 @@
     <h2>1. Resident Visa Status</h2>
     <label>Visa Grant Date (Inshore):</label>
     <input type="date" id="visaDate" onchange="saveAndRefresh()">
-    <p style="font-size: 10px; color: #95a5a6;">* Calculation starts from this date by default.</p>
 </div>
 
 <div class="card">
@@ -36,7 +37,7 @@
     <input type="date" id="depDate">
     <label>Return Date:</label>
     <input type="date" id="arrDate">
-    <button onclick="addTrip()">Log This Trip</button>
+    <button onclick="addTrip()">Add Travel Record</button>
 </div>
 
 <div id="app-body"></div>
@@ -44,7 +45,7 @@
 <div class="card">
     <h2>Travel History</h2>
     <div id="history"></div>
-    <button onclick="resetAll()" class="footer-btn">Reset All Data</button>
+    <button onclick="resetAll()" class="footer-btn">Clear All Data</button>
 </div>
 
 <script>
@@ -61,7 +62,7 @@
     function addTrip() {
         const dep = document.getElementById('depDate').value;
         const arr = document.getElementById('arrDate').value;
-        if(!dep || !arr) return alert("Please fill both dates.");
+        if(!dep || !arr) return alert("Please select both dates.");
         trips.push({ dep, arr });
         localStorage.setItem('nz_trips', JSON.stringify(trips));
         render();
@@ -71,6 +72,8 @@
         const vStartStr = document.getElementById('visaDate').value;
         if(!vStartStr) return;
         const vStart = new Date(vStartStr);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999); // Include full day of today
         let html = "";
 
         for(let i=0; i<2; i++) {
@@ -79,34 +82,56 @@
             let pEnd = new Date(pStart);
             pEnd.setDate(pStart.getDate() + 364);
 
-            let daysAway = 0;
-            trips.forEach(t => {
-                let d = new Date(t.dep);
-                let a = new Date(t.arr);
-                let overlapS = d > pStart ? d : pStart;
-                let overlapE = a < pEnd ? a : pEnd;
-                if(overlapS < overlapE) {
-                    daysAway += Math.floor((overlapE - overlapS)/(1000*60*60*24));
+            let daysInNZ = 0;
+            let statusClass = "fail";
+            let statusText = "NOT ELIGIBLE";
+
+            if (today >= pStart) {
+                // Calculate current actual progress up to "today" or "period end"
+                let calcEnd = today < pEnd ? today : pEnd;
+                let elapsedDays = Math.floor((calcEnd - pStart) / (1000*60*60*24)) + 1;
+                
+                let daysAway = 0;
+                trips.forEach(t => {
+                    let d = new Date(t.dep);
+                    let a = new Date(t.arr);
+                    let overlapS = d > pStart ? d : pStart;
+                    let overlapE = a < calcEnd ? a : calcEnd;
+                    if(overlapS < overlapE) {
+                        daysAway += Math.floor((overlapE - overlapS) / (1000*60*60*24));
+                    }
+                });
+
+                daysInNZ = elapsedDays - daysAway;
+                if (daysInNZ >= 184) {
+                    statusClass = "pass";
+                    statusText = "COMPLIANT";
+                } else {
+                    statusClass = "pending";
+                    statusText = "IN PROGRESS";
                 }
-            });
+            } else {
+                statusClass = "pending";
+                statusText = "NOT STARTED";
+            }
 
-            let totalYearDays = Math.floor((pEnd - pStart)/(1000*60*60*24)) + 1;
-            let daysInNZ = totalYearDays - daysAway;
-            let isPass = daysInNZ >= 184;
-
-            html += `<div class="card">
-                <h2>Year ${i+1} Progress</h2>
-                <div style="font-size:11px; color:#7f8c8d;">Period: ${pStart.toDateString()} - ${pEnd.toDateString()}</div>
-                <div class="days-tag">${daysInNZ} <span style="font-size:14px">Days</span></div>
-                <div class="status-box ${isPass ? 'pass' : 'fail'}">${isPass ? 'COMPLIANT' : 'NON-COMPLIANT'}</div>
-            </div>`;
+            html += `
+                <div class="card">
+                    <h2>Year ${i+1} Progress</h2>
+                    <div style="font-size:11px; color:#7f8c8d;">${pStart.toDateString()} to ${pEnd.toDateString()}</div>
+                    <div class="days-tag">${daysInNZ < 0 ? 0 : daysInNZ} <span style="font-size:14px">Days</span></div>
+                    <div class="status-box ${statusClass}">${statusText}</div>
+                    <p style="font-size:10px; color:#95a5a6; text-align:center; margin-top:8px;">
+                        Requirement: 184 days in this period.
+                    </p>
+                </div>`;
         }
         document.getElementById('app-body').innerHTML = html;
         document.getElementById('history').innerHTML = trips.map(t => 
-            `<div class="history-item"><span>🛫 Dep: ${t.dep}</span> <span>🛬 Arr: ${t.arr}</span></div>`).join('');
+            `<div class="history-item"><span>🛫 ${t.dep}</span> <span>🛬 ${t.arr}</span></div>`).join('');
     }
 
-    function resetAll() { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); } }
+    function resetAll() { if(confirm("Permanently delete all data?")) { localStorage.clear(); location.reload(); } }
     render();
 </script>
 </body>
