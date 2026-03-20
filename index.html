@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>NZ 184-Day Tracker V4</title>
+    <title>NZ 184 Tracker V4.1-Sorted</title>
     <style>
         :root { --bg: #f4f7f9; --card: #ffffff; --text: #2c3e50; --primary: #3498db; --pass: #27ae60; --fail: #e74c3c; --delete: #e67e22; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-top: env(safe-area-inset-top); }
         .card { background: var(--card); border-radius: 12px; padding: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        h2 { font-size: 16px; margin-top: 0; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        h2 { font-size: 16px; margin-top: 0; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 8px; display: flex; justify-content: space-between; }
+        .ver { font-size: 10px; color: #bdc3c7; font-weight: normal; }
         label { font-size: 12px; color: #7f8c8d; font-weight: bold; display: block; margin-top: 10px; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
@@ -25,7 +26,7 @@
 <body>
 
 <div class="card">
-    <h2>1. Resident Visa Status</h2>
+    <h2>1. Resident Visa Status <span class="ver">v4.1</span></h2>
     <label>Visa Grant Date (Inshore):</label>
     <input type="date" id="visaDate" onchange="saveAndRefresh()">
 </div>
@@ -42,7 +43,7 @@
 <div id="app-body"></div>
 
 <div class="card">
-    <h2>Travel History (Sorted by Date)</h2>
+    <h2>Travel History (Auto-Sorted)</h2>
     <div id="history"></div>
     <button onclick="resetAll()" class="footer-btn">Clear All Data</button>
 </div>
@@ -65,7 +66,7 @@
         
         trips.push({ dep, arr });
         
-        // 核心改动：按出发日期自动排序，实现“插入”效果
+        // Sorting logic: ensures oldest trips are at the top
         trips.sort((a, b) => new Date(a.dep) - new Date(b.dep));
         
         localStorage.setItem('nz_trips', JSON.stringify(trips));
