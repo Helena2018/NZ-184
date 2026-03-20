@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>NZ 184-Day Tracker V3</title>
+    <title>NZ 184-Day Tracker V4</title>
     <style>
         :root { --bg: #f4f7f9; --card: #ffffff; --text: #2c3e50; --primary: #3498db; --pass: #27ae60; --fail: #e74c3c; --delete: #e67e22; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-top: env(safe-area-inset-top); }
@@ -42,7 +42,7 @@
 <div id="app-body"></div>
 
 <div class="card">
-    <h2>Travel History</h2>
+    <h2>Travel History (Sorted by Date)</h2>
     <div id="history"></div>
     <button onclick="resetAll()" class="footer-btn">Clear All Data</button>
 </div>
@@ -62,10 +62,14 @@
         const dep = document.getElementById('depDate').value;
         const arr = document.getElementById('arrDate').value;
         if(!dep || !arr) return alert("Please select both dates.");
+        
         trips.push({ dep, arr });
+        
+        // 核心改动：按出发日期自动排序，实现“插入”效果
+        trips.sort((a, b) => new Date(a.dep) - new Date(b.dep));
+        
         localStorage.setItem('nz_trips', JSON.stringify(trips));
         render();
-        // Clear input fields
         document.getElementById('depDate').value = "";
         document.getElementById('arrDate').value = "";
     }
