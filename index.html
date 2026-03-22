@@ -20,6 +20,8 @@
         .pending { background: #fdf6e3; color: #b58900; }
         .history-item { display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 12px 0; border-bottom: 1px dashed #eee; }
         .del-btn { background: var(--delete); padding: 5px 10px; font-size: 10px; border-radius: 4px; width: auto; margin: 0; }
+        .edit-btn { background: var(--primary); padding: 5px 10px; font-size: 10px; border-radius: 4px; width: auto; margin: 0; margin-right: 5px; }
+        .editing { border: 2px solid var(--primary) !important; background: #ebf5fb !important; }
         .footer-btn { background: #bdc3c7; font-size: 11px; margin-top: 20px; }
     </style>
 </head>
@@ -73,6 +75,8 @@
         render();
         document.getElementById('depDate').value = "";
         document.getElementById('arrDate').value = "";
+        document.getElementById('depDate').classList.remove('editing');
+        document.getElementById('arrDate').classList.remove('editing');
     }
 
     function deleteTrip(index) {
@@ -81,6 +85,27 @@
             localStorage.setItem('nz_trips', JSON.stringify(trips));
             render();
         }
+    }
+
+    function editTrip(index) {
+        const trip = trips[index];
+    
+        // 1. Fill the dates back into inputs
+        document.getElementById('depDate').value = trip.dep;
+        document.getElementById('arrDate').value = trip.arr;
+    
+        // 2. Add highlight effect to inputs
+        document.getElementById('depDate').classList.add('editing');
+        document.getElementById('arrDate').classList.add('editing');
+    
+        // 3. Remove the item from array (it will be re-added after editing)
+        trips.splice(index, 1);
+        localStorage.setItem('nz_trips', JSON.stringify(trips));
+    
+        // 4. Scroll to top for easier editing
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+        render();
     }
 
     function render() {
@@ -125,10 +150,13 @@
         document.getElementById('app-body').innerHTML = html;
         
         document.getElementById('history').innerHTML = trips.map((t, index) => 
-            `<div class="history-item">
-                <div>🛫 ${t.dep} <br> 🛬 ${t.arr}</div>
-                <button class="del-btn" onclick="deleteTrip(${index})">Delete</button>
-            </div>`).join('');
+    `<div class="history-item">
+        <div>🛫 ${t.dep} <br> 🛬 ${t.arr}</div>
+        <div style="display: flex;">
+            <button class="edit-btn" onclick="editTrip(${index})">Edit</button>
+            <button class="del-btn" onclick="deleteTrip(${index})">Delete</button>
+        </div>
+    </div>`).join('');
     }
 
     function resetAll() { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); } }
