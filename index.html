@@ -13,6 +13,7 @@
         .ver { font-size: 10px; color: #bdc3c7; font-weight: normal; }
         label { font-size: 12px; color: #7f8c8d; font-weight: bold; display: block; margin-top: 10px; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        input[type="date"] { font-size: 16px !important; height: 44px; }
         button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .days-tag { font-size: 36px; font-weight: bold; text-align: center; margin: 5px 0; }
         .status-box { padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; }
@@ -36,9 +37,9 @@
 <div class="card">
     <h2>2. Add Overseas Travel</h2>
     <label>Departure Date:</label>
-    <input type="date" id="depDate">
+    <input type="date" id="depDate" required>
     <label>Return Date:</label>
-    <input type="date" id="arrDate">
+    <input type="date" id="arrDate" required>
     <button onclick="addTrip()">Add Travel Record</button>
 </div>
 
@@ -62,21 +63,24 @@
     }
 
     function addTrip() {
-        const dep = document.getElementById('depDate').value;
-        const arr = document.getElementById('arrDate').value;
+        const depField = document.getElementById('depDate');
+        const arrField = document.getElementById('arrDate');
+        const dep = depField.value;
+        const arr = arrField.value;
+
         if(!dep || !arr) return alert("Please select both dates.");
-        
+        if(new Date(dep) >= new Date(arr)) return alert("Departure must be earlier than return.");
+
         trips.push({ dep, arr });
-        
-        // Sorting logic: ensures oldest trips are at the top
         trips.sort((a, b) => new Date(a.dep) - new Date(b.dep));
-        
+    
         localStorage.setItem('nz_trips', JSON.stringify(trips));
         render();
-        document.getElementById('depDate').value = "";
-        document.getElementById('arrDate').value = "";
-        document.getElementById('depDate').classList.remove('editing');
-        document.getElementById('arrDate').classList.remove('editing');
+    
+        depField.value = "";
+        arrField.value = "";
+        depField.classList.remove('editing');
+        arrField.classList.remove('editing');
     }
 
     function deleteTrip(index) {
