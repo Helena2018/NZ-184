@@ -72,9 +72,9 @@
 
       const selectors = ['dep', 'arr'];
       selectors.forEach(prefix => {
-        document.getElementById(prefix+'Y').innerHTML = years.map(y => `<option value="${y}">${y}Year</option>`).join('');
-        document.getElementById(prefix+'M').innerHTML = months.map(m => `<option value="${m < 10 ? '0'+m : m}">${m}Month</option>`).join('');
-        document.getElementById(prefix+'D').innerHTML = days.map(d => `<option value="${d < 10 ? '0'+d : d}">${d}Date</option>`).join('');
+        document.getElementById(prefix+'Y').innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+        document.getElementById(prefix+'M').innerHTML = months.map(m => `<option value="${m < 10 ? '0'+m : m}">${m}</option>`).join('');
+        document.getElementById(prefix+'D').innerHTML = days.map(d => `<option value="${d < 10 ? '0'+d : d}">${d}</option>`).join('');
     });
     }
     initDropdowns();
