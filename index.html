@@ -13,8 +13,8 @@
         .ver { font-size: 10px; color: #bdc3c7; font-weight: normal; }
         label { font-size: 12px; color: #7f8c8d; font-weight: bold; display: block; margin-top: 10px; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        input[type="date"] { position: relative; padding: 12px; -webkit-appearance: none; min-height: 44px; font-size: 16px; }
-        input[type="date"]::-webkit-calendar-picker-indicator { position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: auto; height: auto; color: transparent; background: transparent;}
+        .date-selector {  display: flex;  gap: 5px; margin-top: 8px;  background: #f0f2f5;padding: 5px; border-radius: 10px;}
+        .date-selector select { flex: 1;  padding: 10px 5px;  border: none; background: white;border-radius: 6px; font-size: 14px;  outline: none;  -webkit-appearance: none; text-align: center;}
         button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .days-tag { font-size: 36px; font-weight: bold; text-align: center; margin: 5px 0; }
         .status-box { padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; }
@@ -37,10 +37,21 @@
 
 <div class="card">
     <h2>2. Add Overseas Travel</h2>
-    <label>Departure Date:</label>
-    <input type="date" id="depDate">
-    <label>Return Date:</label>
-    <input type="date" id="arrDate">
+    
+    <label>Departure Date</label>
+    <div class="date-selector">
+        <select id="depY"></select>
+        <select id="depM"></select>
+        <select id="depD"></select>
+    </div>
+
+    <label>Return Date</label>
+    <div class="date-selector">
+        <select id="arrY"></select>
+        <select id="arrM"></select>
+        <select id="arrD"></select>
+    </div>
+
     <button onclick="addTrip()">Add Travel Record</button>
 </div>
 
@@ -53,6 +64,21 @@
 </div>
 
 <script>
+    function initDropdowns() {
+      const years = [], months = [], days = [];
+      for (let i = 1930; i <= 2050; i++) years.push(i);
+      for (let i = 1; i <= 12; i++) months.push(i);
+      for (let i = 1; i <= 31; i++) days.push(i);
+
+      const selectors = ['dep', 'arr'];
+      selectors.forEach(prefix => {
+        document.getElementById(prefix+'Y').innerHTML = years.map(y => `<option value="${y}">${y}Year</option>`).join('');
+        document.getElementById(prefix+'M').innerHTML = months.map(m => `<option value="${m < 10 ? '0'+m : m}">${m}Month</option>`).join('');
+        document.getElementById(prefix+'D').innerHTML = days.map(d => `<option value="${d < 10 ? '0'+d : d}">${d}Date</option>`).join('');
+    });
+    }
+    initDropdowns();
+
     let visaDate = localStorage.getItem('nz_visa_date') || "";
     let trips = JSON.parse(localStorage.getItem('nz_trips')) || [];
 
@@ -64,24 +90,17 @@
     }
 
     function addTrip() {
-        const depField = document.getElementById('depDate');
-        const arrField = document.getElementById('arrDate');
-        const dep = depField.value;
-        const arr = arrField.value;
+      const dep = `${document.getElementById('depY').value}-${document.getElementById('depM').value}-${document.getElementById('depD').value}`;
+      const arr = `${document.getElementById('arrY').value}-${document.getElementById('arrM').value}-${document.getElementById('arrD').value}`;
 
-        if(!dep || !arr) return alert("Please select both dates.");
-        if(new Date(dep) >= new Date(arr)) return alert("Departure must be earlier than return.");
+      if(new Date(dep) >= new Date(arr)) return alert("Departure must be earlier than return.");
 
-        trips.push({ dep, arr });
-        trips.sort((a, b) => new Date(a.dep) - new Date(b.dep));
+      trips.push({ dep, arr });
+      trips.sort((a, b) => new Date(a.dep) - new Date(b.dep));
+      localStorage.setItem('nz_trips', JSON.stringify(trips));
+      render();
     
-        localStorage.setItem('nz_trips', JSON.stringify(trips));
-        render();
-    
-        depField.value = "";
-        arrField.value = "";
-        depField.classList.remove('editing');
-        arrField.classList.remove('editing');
+      console.log("Trip saved: " + dep + " to " + arr);
     }
 
     function deleteTrip(index) {
