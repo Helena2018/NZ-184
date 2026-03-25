@@ -105,17 +105,21 @@ function render() {
 
   const getInNZDays = (start, end) => {
     let daysOutside = 0;
+
     trips.forEach(t => {
       const dep = new Date(t.dep);
       const arr = new Date(t.arr);
+
+      if (isNaN(dep.getTime()) || isNaN(arr.getTime())) return;
 
       const overlapStart = new Date(Math.max(dep, start));
       const overlapEnd = new Date(Math.min(arr, end));
 
       if (overlapStart < overlapEnd) {
         // Calculate total days of overlap
-        const diffTime = Math.abs(overlapEnd - overlapStart);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffTime = overlapEnd - overlapStart;
+
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
         // INZ Logic: Departure/Arrival days count as days in NZ. 
         // Only subtract full days spent entirely outside NZ.
@@ -124,7 +128,9 @@ function render() {
     });
 
     const totalDaysInPeriod = Math.round((end - start) / (1000 * 60 * 60 * 24));
-    return Math.max(0, totalDaysInPeriod - daysOutside);
+    const finalInNZ = totalDaysInPeriod - daysOutside;
+
+    return Math.max(0, Math.floor(finalInNZ));
   };
 
   const daysY2 = getInNZDays(year2Start, appDate);
