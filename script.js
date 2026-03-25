@@ -1,5 +1,6 @@
 // 1. Data Initialization: Load from LocalStorage or set as empty array
 let trips = JSON.parse(localStorage.getItem('nz_trips')) || [];
+let editIndex = -1;
 
 // 2. Selector Initialization: Generate Year/Month/Day options
 function initSelectors() {
@@ -57,8 +58,17 @@ function addTrip() {
     return;
   }
 
-  // Save to memory
-  trips.push({ dep: depDateStr, arr: arrDateStr });
+  if (editIndex > -1) {
+    trips[editIndex] = {
+      dep: depDateStr,
+      arr: arrDateStr
+    };
+    editIndex = -1;
+    document.querySelector('.primary-btn').innerText = "Add Travel Record";
+  } else {
+    // Save to memory
+    trips.push({ dep: depDateStr, arr: arrDateStr });
+  }
 
   // Persist and Refresh UI
   saveAndRender();
@@ -186,11 +196,36 @@ function updateHistoryList() {
       <div class="trip-item">
           <div class="trip-info">✈️ Out: ${t.dep}<br>🛬 Back: ${t.arr}</div>
           <div class="action-links">
+              <button class="edit-link" onclick="editTrip(${originalIndex})">Edit</button>
               <button class="del-link" onclick="deleteTrip(${originalIndex})">Delete</button>
           </div>
       </div>`;
   });
   document.getElementById('tripList').innerHTML = listHtml || '<p style="color:#999; padding:10px;">No records found.</p>';
+}
+
+// Function to populate selectors with existing trip data for editing
+function editTrip(index) {
+  editIndex = index;
+  const trip = trips[index];
+
+  // Split the stored date strings (YYYY-MM-DD)
+  const dParts = trip.dep.split('-');
+  const aParts = trip.arr.split('-');
+
+  // Set selectors to the trip's current values
+  document.getElementById('depY').value = dParts[0];
+  document.getElementById('depM').value = parseInt(dParts[1]);
+  document.getElementById('depD').value = parseInt(dParts[2]);
+  document.getElementById('arrY').value = aParts[0];
+  document.getElementById('arrM').value = parseInt(aParts[1]);
+  document.getElementById('arrD').value = parseInt(aParts[2]);
+
+  // Change the button text to notify user they are in edit mode
+  document.querySelector('.primary-btn').innerText = "Update Record";
+
+  // Scroll to top so user sees the populated selectors
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // Remove a specific record and update storage/UI
