@@ -100,7 +100,7 @@ function render() {
                 <div class="status-tag">⏳ PENDING</div>
             </div>
     `;
-    renderHistory();
+    updateHistoryList();
     return;
   }
 
@@ -114,18 +114,22 @@ function render() {
   // const appDate = new Date(`${document.getElementById('appY').value}-${document.getElementById('appM').value}-${document.getElementById('appD').value}`);
 
   // Define two distinct 12-month windows
-  const year2Start = new Date(appDate); year2Start.setFullYear(appDate.getFullYear() - 1);
-  const year1Start = new Date(year2Start); year1Start.setFullYear(year2Start.getFullYear() - 1);
+  const year2Start = new Date(appDate);
+  year2Start.setFullYear(appDate.getFullYear() - 1);
+
+  const year1Start = new Date(year2Start);
+  year1Start.setFullYear(year2Start.getFullYear() - 1);
 
   const getInNZDays = (start, end) => {
     let daysOutside = 0;
     trips.forEach(t => {
-      const d = new Date(t.dep);
-      const a = new Date(t.arr);
+      const dep = new Date(t.dep);
+      const arr = new Date(t.arr);
+      if (isNaN(dep.getTime()) || isNaN(arr.getTime())) return;
 
       // Calculate overlap between the travel dates and the current 12-month period
-      const overlapStart = new Date(Math.max(d, start));
-      const overlapEnd = new Date(Math.min(a, end));
+      const overlapStart = new Date(Math.max(dep, start));
+      const overlapEnd = new Date(Math.min(arr, end));
 
       if (overlapStart < overlapEnd) {
         // INZ Logic: Departure and Arrival days count as days in NZ. 
@@ -154,9 +158,15 @@ function render() {
         </div>
     `;
 
+  updateHistoryList();
+}
+
+function updateHistoryList() {
+
   // Update Travel History List HTML
   let listHtml = '';
-  // Sort by latest departure date first
+
+  // Sort by latest departure
   trips.sort((a, b) => new Date(b.dep) - new Date(a.dep)).forEach((t, i) => {
     listHtml += `
             <div class="trip-item">
