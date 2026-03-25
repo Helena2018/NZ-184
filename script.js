@@ -43,10 +43,13 @@ function addTrip() {
     return;
   }
 
+  // Robust date string format (YYYY-MM-DD)
   const depDateStr = `${dy}-${dm}-${dd}`;
   const arrDateStr = `${ay}-${am}-${ad}`;
-  const depDate = new Date(depDateStr);
-  const arrDate = new Date(arrDateStr);
+
+  // Use numeric constructor for better cross-browser compatibility
+  const depDate = new Date(parseInt(dy), parseInt(dm) - 1, parseInt(dd));
+  const arrDate = new Date(parseInt(ay), parseInt(am) - 1, parseInt(ad));
 
   // Logic Check: Return date must be after Departure
   if (depDate >= arrDate) {
@@ -79,6 +82,7 @@ function render() {
   const d = document.getElementById('appD').value;
   const container = document.getElementById('progressContainer');
 
+  // Display 0 days if Application Date is not fully selected
   if (!y || !m || !d) {
     container.innerHTML = `
       <div class="card prog-card">
@@ -95,16 +99,21 @@ function render() {
     return;
   }
 
-  const appDate = new Date(`${y}-${m}-${d}`);
+  // Create Date object using numeric parameters to prevent NaN
+  const appDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
 
-  // Define 12-month rolling windows
+  // Final validation before continuing
+  if (isNaN(appDate.getTime())) return;
+
+  // Define 12-month rolling windows based on Application Date
   const year2Start = new Date(appDate);
   year2Start.setFullYear(appDate.getFullYear() - 1);
+
   const year1Start = new Date(year2Start);
   year1Start.setFullYear(year2Start.getFullYear() - 1);
 
+  // Helper function to calculate days in NZ within a period
   const getInNZDays = (start, end) => {
-    // Safety Check: If window dates are invalid, return 0 immediately
     if (!(start instanceof Date) || isNaN(start.getTime()) ||
       !(end instanceof Date) || isNaN(end.getTime())) {
       return 0;
@@ -113,40 +122,41 @@ function render() {
     let daysOutside = 0;
 
     trips.forEach(t => {
-      const dep = new Date(t.dep);
-      const arr = new Date(t.arr);
+      // Parse stored travel dates
+      const partsD = t.dep.split('-');
+      const partsA = t.arr.split('-');
+      const dep = new Date(parseInt(partsD[0]), parseInt(partsD[1]) - 1, parseInt(partsD[2]));
+      const arr = new Date(parseInt(partsA[0]), parseInt(partsA[1]) - 1, parseInt(partsA[2]));
 
-      // Skip invalid trip records to prevent NaN
       if (isNaN(dep.getTime()) || isNaN(arr.getTime())) return;
 
-      // Calculate the intersection between the trip and the 12-month window
+      // Calculate intersection between the trip and the current window
       const overlapStart = new Date(Math.max(dep, start));
       const overlapEnd = new Date(Math.min(arr, end));
 
       if (overlapStart < overlapEnd) {
         const diffTime = overlapEnd - overlapStart;
-        // Using Math.round to handle potential DST (Daylight Saving Time) offsets
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-        // INZ Rule: Departure and Arrival days count as days IN New Zealand.
+        // INZ Rule: Departure and Arrival days are counted as days IN New Zealand.
         // Subtract only the days spent entirely outside (diffDays - 1).
         daysOutside += Math.max(0, diffDays - 1);
       }
     });
 
-    // Calculate total duration of the period in days
+    // Calculate total days in the period (e.g. 365)
     const totalDaysInPeriod = Math.round((end - start) / (1000 * 60 * 60 * 24));
 
-    // Final Calculation: Ensure both operands are valid numbers
+    // Calculate final days in NZ
     const finalInNZ = totalDaysInPeriod - daysOutside;
 
-    // Return the floor value, ensuring it's at least 0 and definitely a number
     return isNaN(finalInNZ) ? 0 : Math.max(0, Math.floor(finalInNZ));
   };
 
   const daysY2 = getInNZDays(year2Start, appDate);
   const daysY1 = getInNZDays(year1Start, year2Start);
 
+  // Update Progress Cards with calculated results
   container.innerHTML = `
     <div class="card prog-card">
         <h3>Year 2 (Last 12 months)</h3>
@@ -165,11 +175,12 @@ function render() {
 // 6. Travel History List Management
 function updateHistoryList() {
   let listHtml = '';
-  // Use spread operator to sort without mutating the original array
-  const sortedTrips = [...trips].sort((a, b) => new Date(b.dep) - new Date(a.dep));
+  // Use spread operator to sort without mutating the original trips array
+  const sortedTrips = [...trips].sort((a, b) => {
+    return new Date(b.dep.replace(/-/g, '/')) - new Date(a.dep.replace(/-/g, '/'));
+  });
 
   sortedTrips.forEach((t) => {
-    // Reference original index for accurate deletion
     const originalIndex = trips.indexOf(t);
     listHtml += `
       <div class="trip-item">
@@ -182,11 +193,13 @@ function updateHistoryList() {
   document.getElementById('tripList').innerHTML = listHtml || '<p style="color:#999; padding:10px;">No records found.</p>';
 }
 
+// Remove a specific record and update storage/UI
 function deleteTrip(i) {
   trips.splice(i, 1);
   saveAndRender();
 }
 
+// Clear all records from storage after confirmation
 function clearData() {
   if (confirm("Are you sure you want to delete all records?")) {
     trips = [];
@@ -194,13 +207,13 @@ function clearData() {
   }
 }
 
-// Bootstrap Application
+// Bootstrap Application on page load
 window.onload = () => {
   initSelectors();
   render();
 };
 
-// Re-calculate when target application date changes
+// Re-calculate results whenever the Application Date selectors change
 document.querySelectorAll('#appY, #appM, #appD').forEach(s => {
   s.onchange = render;
 });
