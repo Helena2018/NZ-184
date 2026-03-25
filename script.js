@@ -3,7 +3,7 @@ let trips = JSON.parse(localStorage.getItem('nz_trips')) || [];
 
 // Initialization: Generate Year/Month/Day options and set default values
 function initSelectors() {
-  const years = [2024, 2025, 2026, 2027];
+  const years = [2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032];
   const selectors = ['app', 'dep', 'arr'];
 
   selectors.forEach(prefix => {
