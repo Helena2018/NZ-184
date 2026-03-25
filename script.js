@@ -111,7 +111,7 @@ function render() {
   }
 
 
-  const appDate = new Date(`${document.getElementById('appY').value}-${document.getElementById('appM').value}-${document.getElementById('appD').value}`);
+  // const appDate = new Date(`${document.getElementById('appY').value}-${document.getElementById('appM').value}-${document.getElementById('appD').value}`);
 
   // Define two distinct 12-month windows
   const year2Start = new Date(appDate); year2Start.setFullYear(appDate.getFullYear() - 1);
