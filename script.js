@@ -161,6 +161,11 @@ function render() {
   updateHistoryList();
 }
 
+function saveAndRender() {
+  localStorage.setItem('nz_trips', JSON.stringify(trips));
+  render();
+}
+
 function updateHistoryList() {
 
   // Update Travel History List HTML
