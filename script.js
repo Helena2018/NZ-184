@@ -92,6 +92,11 @@ function render() {
   const d = document.getElementById('appD').value;
   const container = document.getElementById('progressContainer');
 
+  // Save Target App Date to LocalStorage
+  if (y && m && d) {
+    localStorage.setItem('nz_app_date', JSON.stringify({ y, m, d }));
+  }
+
   // Display 0 days if Application Date is not fully selected
   if (!y || !m || !d) {
     container.innerHTML = `
@@ -238,6 +243,13 @@ function deleteTrip(i) {
 function clearData() {
   if (confirm("Are you sure you want to delete all records?")) {
     trips = [];
+    localStorage.removeItem('nz_app_date');
+
+    // Reset target Date selectors to placeholders
+    document.getElementById('appY').value = "";
+    document.getElementById('appM').value = "";
+    document.getElementById('appD').value = "";
+
     saveAndRender();
   }
 }
@@ -245,6 +257,14 @@ function clearData() {
 // Bootstrap Application on page load
 window.onload = () => {
   initSelectors();
+
+  // Load saved App Date from LocalStorage
+  const savedAppDate = JSON.parse(localStorage.getItem('nz_app_date'));
+  if (savedAppDate) {
+    document.getElementById('appY').value = savedAppDate.y;
+    document.getElementById('appM').value = savedAppDate.m;
+    document.getElementById('appD').value = savedAppDate.d;
+  }
   render();
 };
 
