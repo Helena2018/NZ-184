@@ -11,6 +11,8 @@ function initSelectors() {
     const mSel = document.getElementById(prefix + 'M');
     const dSel = document.getElementById(prefix + 'D');
 
+    if (!ySel || !mSel || !dSel) return;
+
     // Add Placeholder Options
     ySel.add(new Option("Year", "", true, true));
     mSel.add(new Option("Month", "", true, true));
@@ -29,19 +31,47 @@ function initSelectors() {
 
 // Add new travel record
 function addTrip() {
-  const depDateStr = `${document.getElementById('depY').value}-${document.getElementById('depM').value}-${document.getElementById('depD').value}`;
-  const arrDateStr = `${document.getElementById('arrY').value}-${document.getElementById('arrM').value}-${document.getElementById('arrD').value}`;
+  // 1. Get all 6 selector values
+  const dy = document.getElementById('depY').value;
+  const dm = document.getElementById('depM').value;
+  const dd = document.getElementById('depD').value;
+  const ay = document.getElementById('arrY').value;
+  const am = document.getElementById('arrM').value;
+  const ad = document.getElementById('arrD').value;
 
-  // Validation: Return date must be after departure
-  if (new Date(depDateStr) >= new Date(arrDateStr)) {
+  // 2. STAGE 1: Completeness Check
+  // If any value is empty (still showing placeholder), stop and alert.
+  if (!dy || !dm || !dd || !ay || !am || !ad) {
+    alert("Please select complete Departure and Return dates.");
+    return;
+  }
+
+  // 3. Combine into standard Date strings
+  const depDateStr = `${dy}-${dm}-${dd}`;
+  const arrDateStr = `${ay}-${am}-${ad}`;
+
+  const depDate = new Date(depDateStr);
+  const arrDate = new Date(arrDateStr);
+
+  // 4. STAGE 2: Logic Check
+  // Return date cannot be before or the same as Departure date.
+  if (depDate >= arrDate) {
     alert("Error: Return date must be after departure date.");
     return;
   }
 
-  if (!depDateStr || !arrDateStr) return aleart("Please select complete dates.");
-
+  // 5. STAGE 3: Save Data
   trips.push({ dep: depDateStr, arr: arrDateStr });
+
+  // 6. Finalize: Save to LocalStorage and update UI
   saveAndRender();
+
+  // 7. RESET Selectors: Set them back to placeholders
+  // This provides a clean UI for the next entry
+  const selectors = ['depY', 'depM', 'depD', 'arrY', 'arrM', 'arrD'];
+  selectors.forEach(id => {
+    document.getElementById(id).value = "";
+  });
 }
 
 // Persist data to LocalStorage and update UI
