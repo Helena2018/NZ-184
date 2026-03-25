@@ -100,6 +100,13 @@ function render() {
                 <div class="status-tag">⏳ PENDING</div>
             </div>
     `;
+    renderHistory();
+    return;
+  }
+
+  const appDate = new Date(`${y}-${m}-${d}`);
+
+  if (isNaN(appDate.getTime())) {
     return;
   }
 
