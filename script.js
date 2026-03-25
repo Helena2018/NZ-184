@@ -11,15 +11,19 @@ function initSelectors() {
     const mSel = document.getElementById(prefix + 'M');
     const dSel = document.getElementById(prefix + 'D');
 
+    // Add Placeholder Options
+    ySel.add(new Option("Year", "", true, true));
+    mSel.add(new Option("Month", "", true, true));
+    dSel.add(new Option("Day", "", true, true));
+
+    // Disable the placeholders to force users to pick a real date
+    ySel.options[0].disabled = true;
+    mSel.options[0].disabled = true;
+    dSel.options[0].disabled = true;
+
     years.forEach(y => ySel.add(new Option(y, y)));
     for (let i = 1; i <= 12; i++) mSel.add(new Option(i, i));
     for (let i = 1; i <= 31; i++) dSel.add(new Option(i, i));
-
-    // Set default selection to current date
-    const today = new Date();
-    ySel.value = today.getFullYear();
-    mSel.value = today.getMonth() + 1;
-    dSel.value = today.getDate();
   });
 }
 
@@ -33,6 +37,8 @@ function addTrip() {
     alert("Error: Return date must be after departure date.");
     return;
   }
+
+  if (!depDateStr || !arrDateStr) return aleart("Please select complete dates.");
 
   trips.push({ dep: depDateStr, arr: arrDateStr });
   saveAndRender();
