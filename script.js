@@ -104,33 +104,44 @@ function render() {
   year1Start.setFullYear(year2Start.getFullYear() - 1);
 
   const getInNZDays = (start, end) => {
+    // Safety Check: If window dates are invalid, return 0 immediately
+    if (!(start instanceof Date) || isNaN(start.getTime()) ||
+      !(end instanceof Date) || isNaN(end.getTime())) {
+      return 0;
+    }
+
     let daysOutside = 0;
 
     trips.forEach(t => {
       const dep = new Date(t.dep);
       const arr = new Date(t.arr);
 
+      // Skip invalid trip records to prevent NaN
       if (isNaN(dep.getTime()) || isNaN(arr.getTime())) return;
 
+      // Calculate the intersection between the trip and the 12-month window
       const overlapStart = new Date(Math.max(dep, start));
       const overlapEnd = new Date(Math.min(arr, end));
 
       if (overlapStart < overlapEnd) {
-        // Calculate total days of overlap
         const diffTime = overlapEnd - overlapStart;
-
+        // Using Math.round to handle potential DST (Daylight Saving Time) offsets
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-        // INZ Logic: Departure/Arrival days count as days in NZ. 
-        // Only subtract full days spent entirely outside NZ.
+        // INZ Rule: Departure and Arrival days count as days IN New Zealand.
+        // Subtract only the days spent entirely outside (diffDays - 1).
         daysOutside += Math.max(0, diffDays - 1);
       }
     });
 
+    // Calculate total duration of the period in days
     const totalDaysInPeriod = Math.round((end - start) / (1000 * 60 * 60 * 24));
+
+    // Final Calculation: Ensure both operands are valid numbers
     const finalInNZ = totalDaysInPeriod - daysOutside;
 
-    return Math.max(0, Math.floor(finalInNZ));
+    // Return the floor value, ensuring it's at least 0 and definitely a number
+    return isNaN(finalInNZ) ? 0 : Math.max(0, Math.floor(finalInNZ));
   };
 
   const daysY2 = getInNZDays(year2Start, appDate);
