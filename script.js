@@ -134,11 +134,14 @@ function render() {
       if (overlapStart < overlapEnd) {
         // INZ Logic: Departure and Arrival days count as days in NZ. 
         // Therefore, we only subtract the full days spent entirely outside.
-        daysOutside += (overlapEnd - overlapStart) / (1000 * 60 * 60 * 24) - 1;
+        daysOutside += Math.max(0, diff - 1);
       }
     });
+
     const totalDaysInPeriod = (end - start) / (1000 * 60 * 60 * 24);
-    return Math.max(0, Math.floor(totalDaysInPeriod - daysOutside));
+    let result = Math.floor(totalDaysInPeriod - daysOutside);
+
+    return Math.max(0, result);
   };
 
   const daysY2 = getInNZDays(year2Start, appDate);
