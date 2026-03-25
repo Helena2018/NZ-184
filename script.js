@@ -52,6 +52,28 @@ function saveAndRender() {
 
 // Core Logic: Dynamic Rolling Calculation based on "Target Application Date"
 function render() {
+
+  const y = document.getElementById('appY').value;
+  const m = document.getElementById('appM').value;
+  const d = document.getElementById('appD').value;
+
+  if (!y || !m || !d) {
+    document.getElementById('progressContainer').innerHTML = `
+      <div class="card prog-card">
+                <h3>Year 2 (Last 12 months)</h3>
+                <div class="days-hero">0 <small style="font-size:14px; color:#999;">Days</small></div>
+                <div class="status-tag">⏳ PENDING</div>
+            </div>
+            <div class="card prog-card">
+                <h3>Year 1 (13-24 months ago)</h3>
+                <div class="days-hero">0 <small style="font-size:14px; color:#999;">Days</small></div>
+                <div class="status-tag">⏳ PENDING</div>
+            </div>
+    `;
+    return;
+  }
+
+
   const appDate = new Date(`${document.getElementById('appY').value}-${document.getElementById('appM').value}-${document.getElementById('appD').value}`);
 
   // Define two distinct 12-month windows
