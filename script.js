@@ -1,0 +1,130 @@
+// Load data from LocalStorage or initialize as empty array
+let trips = JSON.parse(localStorage.getItem('nz_trips')) || [];
+
+// Initialization: Generate Year/Month/Day options and set default values
+function initSelectors() {
+  const years = [2024, 2025, 2026, 2027];
+  const selectors = ['app', 'dep', 'arr'];
+
+  selectors.forEach(prefix => {
+    const ySel = document.getElementById(prefix + 'Y');
+    const mSel = document.getElementById(prefix + 'M');
+    const dSel = document.getElementById(prefix + 'D');
+
+    years.forEach(y => ySel.add(new Option(y, y)));
+    for (let i = 1; i <= 12; i++) mSel.add(new Option(i, i));
+    for (let i = 1; i <= 31; i++) dSel.add(new Option(i, i));
+
+    // Set default selection to current date
+    const today = new Date();
+    ySel.value = today.getFullYear();
+    mSel.value = today.getMonth() + 1;
+    dSel.value = today.getDate();
+  });
+}
+
+// Add new travel record
+function addTrip() {
+  const depDateStr = `${document.getElementById('depY').value}-${document.getElementById('depM').value}-${document.getElementById('depD').value}`;
+  const arrDateStr = `${document.getElementById('arrY').value}-${document.getElementById('arrM').value}-${document.getElementById('arrD').value}`;
+
+  // Validation: Return date must be after departure
+  if (new Date(depDateStr) >= new Date(arrDateStr)) {
+    alert("Error: Return date must be after departure date.");
+    return;
+  }
+
+  trips.push({ dep: depDateStr, arr: arrDateStr });
+  saveAndRender();
+}
+
+// Persist data to LocalStorage and update UI
+function saveAndRender() {
+  localStorage.setItem('nz_trips', JSON.stringify(trips));
+  render();
+}
+
+// Core Logic: Dynamic Rolling Calculation based on "Target Application Date"
+function render() {
+  const appDate = new Date(`${document.getElementById('appY').value}-${document.getElementById('appM').value}-${document.getElementById('appD').value}`);
+
+  // Define two distinct 12-month windows
+  const year2Start = new Date(appDate); year2Start.setFullYear(appDate.getFullYear() - 1);
+  const year1Start = new Date(year2Start); year1Start.setFullYear(year2Start.getFullYear() - 1);
+
+  const getInNZDays = (start, end) => {
+    let daysOutside = 0;
+    trips.forEach(t => {
+      const d = new Date(t.dep);
+      const a = new Date(t.arr);
+
+      // Calculate overlap between the travel dates and the current 12-month period
+      const overlapStart = new Date(Math.max(d, start));
+      const overlapEnd = new Date(Math.min(a, end));
+
+      if (overlapStart < overlapEnd) {
+        // INZ Logic: Departure and Arrival days count as days in NZ. 
+        // Therefore, we only subtract the full days spent entirely outside.
+        daysOutside += (overlapEnd - overlapStart) / (1000 * 60 * 60 * 24) - 1;
+      }
+    });
+    const totalDaysInPeriod = (end - start) / (1000 * 60 * 60 * 24);
+    return Math.max(0, Math.floor(totalDaysInPeriod - daysOutside));
+  };
+
+  const daysY2 = getInNZDays(year2Start, appDate);
+  const daysY1 = getInNZDays(year1Start, year2Start);
+
+  // Update Progress Cards HTML
+  document.getElementById('progressContainer').innerHTML = `
+        <div class="card prog-card">
+            <h3>Year 2 (Last 12 months)</h3>
+            <div class="days-hero">${daysY2} <small style="font-size:14px; color:#999;">Days</small></div>
+            <div class="status-tag">${daysY2 >= 184 ? '✅ QUALIFIED' : '⏳ IN PROGRESS'}</div>
+        </div>
+        <div class="card prog-card">
+            <h3>Year 1 (13-24 months ago)</h3>
+            <div class="days-hero">${daysY1} <small style="font-size:14px; color:#999;">Days</small></div>
+            <div class="status-tag">${daysY1 >= 184 ? '✅ QUALIFIED' : '⏳ IN PROGRESS'}</div>
+        </div>
+    `;
+
+  // Update Travel History List HTML
+  let listHtml = '';
+  // Sort by latest departure date first
+  trips.sort((a, b) => new Date(b.dep) - new Date(a.dep)).forEach((t, i) => {
+    listHtml += `
+            <div class="trip-item">
+                <div class="trip-info">✈️ Out: ${t.dep}<br>🛬 Back: ${t.arr}</div>
+                <div class="action-links">
+                    <button class="del-link" onclick="deleteTrip(${i})">Delete</button>
+                </div>
+            </div>`;
+  });
+  document.getElementById('tripList').innerHTML = listHtml;
+}
+
+// Remove a specific record
+function deleteTrip(i) {
+  trips.splice(i, 1);
+  saveAndRender();
+}
+
+// Clear all data with confirmation
+function clearData() {
+  if (confirm("Are you sure you want to delete all records?")) {
+    trips = [];
+    saveAndRender();
+  }
+}
+
+// Bootstrap application on page load
+window.onload = () => {
+  initSelectors();
+  render();
+};
+
+// Re-calculate results whenever the Application Date is changed
+document.querySelectorAll('#appY, #appM, #appD').forEach(s => {
+  s.onchange = render;
+});

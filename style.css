@@ -1,61 +1,63 @@
+/* --- Global Variables and Color Palette --- */
 :root {
-    --primary: #C35831;       
-    --primary-light: #FDF2ED; 
-    --bg: #F8F9FA;            
-    --card-bg: #FFFFFF;
-    --text: #333333;
-    --text-muted: rgba(0, 0, 0, 0.35); 
-    --pill-bg: #F1F3F5;       
-    --border: #E9ECEF;
-    --success: #27ae60;
+    --primary: #C35831;       /* Core Terracotta Orange */
+    --primary-soft: #D48344;
+    --bg: #F8F9FA;
+    --text-main: #4A4A4A;
+    --text-muted: rgba(0, 0, 0, 0.3);
+    --pill-bg: #F1F3F5;
 }
 
 * {
     box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent; 
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-color: var(--bg);
-    color: var(--text);
+    color: var(--text-main);
     padding: 20px 15px;
     max-width: 500px;
     margin: 0 auto;
-    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
 }
 
+/* --- Card Containers --- */
 .card {
-    background: var(--card-bg);
+    background: white;
     padding: 24px 20px;
-    border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.03);
-    margin-bottom: 25px;
-    border: 1px solid rgba(0,0,0,0.02);
+    border-radius: 24px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.02);
+    margin-bottom: 20px;
+    position: relative;
 }
 
-h1, h2 { 
-    color: var(--primary); 
-    margin-top: 0; 
-    font-size: 1.2rem;
+/* Corner Version Tag */
+.version-tag {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+h2 {
+    color: var(--primary);
+    font-size: 1.1rem;
+    margin: 0 0 15px 0;
     font-weight: 700;
 }
 
-label {
-    display: block;
-    font-size: 0.9rem;
-    color: #666;
-    margin-bottom: 4px;
-    margin-left: 5px;
-}
+.instruction { font-size: 12px; color: #999; margin-bottom: 15px; }
+.date-label { font-size: 12px; color: #888; margin: 15px 0 5px 5px; font-weight: 600; }
 
+/* --- Pill-shaped Date Selector --- */
 .pill-container {
     display: flex;
     background: var(--pill-bg);
-    border-radius: 12px; 
+    border-radius: 12px;
     padding: 2px;
-    margin-bottom: 20px;
-    border: 1px solid var(--border);
 }
 
 .pill-container select {
@@ -63,81 +65,48 @@ label {
     border: none;
     background: transparent;
     padding: 12px 0;
-    font-size: 16px;
+    font-size: 14px;
     text-align: center;
     outline: none;
-    appearance: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-    color: var(--text);
+    color: var(--text-main);
 }
 
-.pill-container select:invalid, 
-.pill-container select option[value=""] {
-    color: var(--text-muted);
-}
-
-button {
+/* --- Primary Button --- */
+.primary-btn {
     width: 100%;
     background-color: var(--primary);
     color: white;
     border: none;
-    padding: 16px;
-    border-radius: 12px;
-    font-size: 16px;
+    padding: 15px;
+    border-radius: 14px;
+    font-size: 15px;
     font-weight: 600;
+    margin-top: 15px;
     cursor: pointer;
-    transition: transform 0.1s, background 0.2s;
+    transition: background 0.2s;
 }
 
-button:active {
-    transform: scale(0.98);
-    background-color: #A44626;
+.primary-btn:active {
+    background-color: var(--primary-soft);
 }
 
-.progress-container {
-    text-align: center;
-    padding: 10px 0;
-}
+/* --- Progress Card Styles --- */
+.prog-card h3 { font-size: 13px; color: #777; margin-bottom: 5px; text-transform: uppercase; }
+.days-hero { font-size: 2.8rem; font-weight: 800; margin: 5px 0; color: #333; }
+.status-tag { font-size: 12px; font-weight: 700; color: var(--primary-soft); letter-spacing: 1px; }
 
-.days-count {
-    font-size: 3rem;
-    font-weight: 800;
-    color: var(--text);
-    margin: 10px 0;
-}
-
-.status-badge {
-    display: inline-block;
-    padding: 8px 24px;
-    background: #FFF9F2;
-    color: #D48344; /* 辅助的大地色 */
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
+/* --- History List Styles --- */
 .trip-item {
     display: flex;
     justify-content: space-between;
-    align-items: center;
     padding: 15px 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid #EEE;
+}
+.trip-info { font-size: 14px; line-height: 1.5; color: #555; }
+.del-link {
+    background: none; border: none; font-size: 12px; 
+    color: #BBB; cursor: pointer; text-decoration: underline;
 }
 
-.trip-info div {
-    font-size: 0.85rem;
-    color: #888;
-}
-
-.edit-btn {
-    background: none;
-    color: var(--primary);
-    border: 1px solid var(--primary);
-    padding: 6px 14px;
-    width: auto;
-    font-size: 0.8rem;
-    border-radius: 20px;
-}
+.clear-wrap { text-align: center; margin-top: 30px; padding-bottom: 40px; }
+.clear-link { background: none; border: none; color: #DDD; font-size: 11px; cursor: pointer; }
