@@ -1,7 +1,7 @@
-// Load data from LocalStorage or initialize as empty array
+// 1. Data Initialization: Load from LocalStorage or set as empty array
 let trips = JSON.parse(localStorage.getItem('nz_trips')) || [];
 
-// Initialization: Generate Year/Month/Day options and set default values
+// 2. Selector Initialization: Generate Year/Month/Day options
 function initSelectors() {
   const years = [2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032];
   const selectors = ['app', 'dep', 'arr'];
@@ -18,7 +18,6 @@ function initSelectors() {
     mSel.add(new Option("Month", "", true, true));
     dSel.add(new Option("Day", "", true, true));
 
-    // Disable the placeholders to force users to pick a real date
     ySel.options[0].disabled = true;
     mSel.options[0].disabled = true;
     dSel.options[0].disabled = true;
@@ -29,9 +28,8 @@ function initSelectors() {
   });
 }
 
-// Add new travel record
+// 3. Add Travel Record
 function addTrip() {
-  // 1. Get all 6 selector values
   const dy = document.getElementById('depY').value;
   const dm = document.getElementById('depM').value;
   const dd = document.getElementById('depD').value;
@@ -39,84 +37,69 @@ function addTrip() {
   const am = document.getElementById('arrM').value;
   const ad = document.getElementById('arrD').value;
 
-  // 2. STAGE 1: Completeness Check
-  // If any value is empty (still showing placeholder), stop and alert.
+  // Validation: Ensure all fields are selected
   if (!dy || !dm || !dd || !ay || !am || !ad) {
     alert("Please select complete Departure and Return dates.");
     return;
   }
 
-  // 3. Combine into standard Date strings
   const depDateStr = `${dy}-${dm}-${dd}`;
   const arrDateStr = `${ay}-${am}-${ad}`;
-
   const depDate = new Date(depDateStr);
   const arrDate = new Date(arrDateStr);
 
-  // 4. STAGE 2: Logic Check
-  // Return date cannot be before or the same as Departure date.
+  // Logic Check: Return date must be after Departure
   if (depDate >= arrDate) {
     alert("Error: Return date must be after departure date.");
     return;
   }
 
-  // 5. STAGE 3: Save Data
+  // Save to memory
   trips.push({ dep: depDateStr, arr: arrDateStr });
 
-  // 6. Finalize: Save to LocalStorage and update UI
+  // Persist and Refresh UI
   saveAndRender();
 
-  // 7. RESET Selectors: Set them back to placeholders
-  // This provides a clean UI for the next entry
-  const selectors = ['depY', 'depM', 'depD', 'arrY', 'arrM', 'arrD'];
-  selectors.forEach(id => {
+  // Reset Selectors to placeholders
+  ['depY', 'depM', 'depD', 'arrY', 'arrM', 'arrD'].forEach(id => {
     document.getElementById(id).value = "";
   });
 }
 
-// Persist data to LocalStorage and update UI
+// 4. Persistence Layer
 function saveAndRender() {
   localStorage.setItem('nz_trips', JSON.stringify(trips));
   render();
 }
 
-// Core Logic: Dynamic Rolling Calculation based on "Target Application Date"
+// 5. Core Calculation & UI Rendering
 function render() {
-
   const y = document.getElementById('appY').value;
   const m = document.getElementById('appM').value;
   const d = document.getElementById('appD').value;
+  const container = document.getElementById('progressContainer');
 
   if (!y || !m || !d) {
-    document.getElementById('progressContainer').innerHTML = `
+    container.innerHTML = `
       <div class="card prog-card">
-                <h3>Year 2 (Last 12 months)</h3>
-                <div class="days-hero">0 <small style="font-size:14px; color:#999;">Days</small></div>
-                <div class="status-tag">⏳ PENDING</div>
-            </div>
-            <div class="card prog-card">
-                <h3>Year 1 (13-24 months ago)</h3>
-                <div class="days-hero">0 <small style="font-size:14px; color:#999;">Days</small></div>
-                <div class="status-tag">⏳ PENDING</div>
-            </div>
-    `;
+          <h3>Year 2 (Last 12 months)</h3>
+          <div class="days-hero">0 <small>Days</small></div>
+          <div class="status-tag">⏳ PENDING</div>
+      </div>
+      <div class="card prog-card">
+          <h3>Year 1 (13-24 months ago)</h3>
+          <div class="days-hero">0 <small>Days</small></div>
+          <div class="status-tag">⏳ PENDING</div>
+      </div>`;
     updateHistoryList();
     return;
   }
 
   const appDate = new Date(`${y}-${m}-${d}`);
 
-  if (isNaN(appDate.getTime())) {
-    return;
-  }
-
-
-  // const appDate = new Date(`${document.getElementById('appY').value}-${document.getElementById('appM').value}-${document.getElementById('appD').value}`);
-
-  // Define two distinct 12-month windows
+  // Define 12-month rolling windows
   const year2Start = new Date(appDate);
   year2Start.setFullYear(appDate.getFullYear() - 1);
-
   const year1Start = new Date(year2Start);
   year1Start.setFullYear(year2Start.getFullYear() - 1);
 
@@ -125,75 +108,68 @@ function render() {
     trips.forEach(t => {
       const dep = new Date(t.dep);
       const arr = new Date(t.arr);
-      if (isNaN(dep.getTime()) || isNaN(arr.getTime())) return;
 
-      // Calculate overlap between the travel dates and the current 12-month period
       const overlapStart = new Date(Math.max(dep, start));
       const overlapEnd = new Date(Math.min(arr, end));
 
       if (overlapStart < overlapEnd) {
-        // INZ Logic: Departure and Arrival days count as days in NZ. 
-        // Therefore, we only subtract the full days spent entirely outside.
-        daysOutside += Math.max(0, diff - 1);
+        // Calculate total days of overlap
+        const diffTime = Math.abs(overlapEnd - overlapStart);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        // INZ Logic: Departure/Arrival days count as days in NZ. 
+        // Only subtract full days spent entirely outside NZ.
+        daysOutside += Math.max(0, diffDays - 1);
       }
     });
 
-    const totalDaysInPeriod = (end - start) / (1000 * 60 * 60 * 24);
-    let result = Math.floor(totalDaysInPeriod - daysOutside);
-
-    return Math.max(0, result);
+    const totalDaysInPeriod = Math.round((end - start) / (1000 * 60 * 60 * 24));
+    return Math.max(0, totalDaysInPeriod - daysOutside);
   };
 
   const daysY2 = getInNZDays(year2Start, appDate);
   const daysY1 = getInNZDays(year1Start, year2Start);
 
-  // Update Progress Cards HTML
-  document.getElementById('progressContainer').innerHTML = `
-        <div class="card prog-card">
-            <h3>Year 2 (Last 12 months)</h3>
-            <div class="days-hero">${daysY2} <small style="font-size:14px; color:#999;">Days</small></div>
-            <div class="status-tag">${daysY2 >= 184 ? '✅ QUALIFIED' : '⏳ IN PROGRESS'}</div>
-        </div>
-        <div class="card prog-card">
-            <h3>Year 1 (13-24 months ago)</h3>
-            <div class="days-hero">${daysY1} <small style="font-size:14px; color:#999;">Days</small></div>
-            <div class="status-tag">${daysY1 >= 184 ? '✅ QUALIFIED' : '⏳ IN PROGRESS'}</div>
-        </div>
-    `;
+  container.innerHTML = `
+    <div class="card prog-card">
+        <h3>Year 2 (Last 12 months)</h3>
+        <div class="days-hero">${daysY2} <small>Days</small></div>
+        <div class="status-tag">${daysY2 >= 184 ? '✅ QUALIFIED' : '⏳ IN PROGRESS'}</div>
+    </div>
+    <div class="card prog-card">
+        <h3>Year 1 (13-24 months ago)</h3>
+        <div class="days-hero">${daysY1} <small>Days</small></div>
+        <div class="status-tag">${daysY1 >= 184 ? '✅ QUALIFIED' : '⏳ IN PROGRESS'}</div>
+    </div>`;
 
   updateHistoryList();
 }
 
-function saveAndRender() {
-  localStorage.setItem('nz_trips', JSON.stringify(trips));
-  render();
-}
-
+// 6. Travel History List Management
 function updateHistoryList() {
-
-  // Update Travel History List HTML
   let listHtml = '';
+  // Use spread operator to sort without mutating the original array
+  const sortedTrips = [...trips].sort((a, b) => new Date(b.dep) - new Date(a.dep));
 
-  // Sort by latest departure
-  trips.sort((a, b) => new Date(b.dep) - new Date(a.dep)).forEach((t, i) => {
+  sortedTrips.forEach((t) => {
+    // Reference original index for accurate deletion
+    const originalIndex = trips.indexOf(t);
     listHtml += `
-            <div class="trip-item">
-                <div class="trip-info">✈️ Out: ${t.dep}<br>🛬 Back: ${t.arr}</div>
-                <div class="action-links">
-                    <button class="del-link" onclick="deleteTrip(${i})">Delete</button>
-                </div>
-            </div>`;
+      <div class="trip-item">
+          <div class="trip-info">✈️ Out: ${t.dep}<br>🛬 Back: ${t.arr}</div>
+          <div class="action-links">
+              <button class="del-link" onclick="deleteTrip(${originalIndex})">Delete</button>
+          </div>
+      </div>`;
   });
-  document.getElementById('tripList').innerHTML = listHtml;
+  document.getElementById('tripList').innerHTML = listHtml || '<p style="color:#999; padding:10px;">No records found.</p>';
 }
 
-// Remove a specific record
 function deleteTrip(i) {
   trips.splice(i, 1);
   saveAndRender();
 }
 
-// Clear all data with confirmation
 function clearData() {
   if (confirm("Are you sure you want to delete all records?")) {
     trips = [];
@@ -201,13 +177,13 @@ function clearData() {
   }
 }
 
-// Bootstrap application on page load
+// Bootstrap Application
 window.onload = () => {
   initSelectors();
   render();
 };
 
-// Re-calculate results whenever the Application Date is changed
+// Re-calculate when target application date changes
 document.querySelectorAll('#appY, #appM, #appD').forEach(s => {
   s.onchange = render;
 });
