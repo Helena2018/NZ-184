@@ -129,35 +129,39 @@ function render() {
 
   // Helper function to calculate days in NZ within a period
   const getInNZDays = (start, end) => {
-    // Explicitly convert to timestamp for comparison
     const startTime = start.getTime();
     const endTime = end.getTime();
 
     let daysOutside = 0;
 
-    trips.forEach(t => {
-      const partsD = t.dep.split('-');
-      const partsA = t.arr.split('-');
-      const dep = new Date(parseInt(partsD[0]), parseInt(partsD[1]) - 1, parseInt(partsD[2])).getTime();
-      const arr = new Date(parseInt(partsA[0]), parseInt(partsA[1]) - 1, parseInt(partsA[2])).getTime();
+    console.log("Current Window:", start.toLocaleDateString(), "to", end.toLocaleDateString());
+    console.log("Trips loaded:", trips);
+    // ------------------------------------------
 
-      // Calculate intersection between the trip and the current window
-      const overlapStart = Math.max(dep, startTime);
-      const overlapEnd = Math.min(arr, endTime);
+    trips.forEach((t, index) => {
+      const depParts = t.dep.split('-');
+      const arrParts = t.arr.split('-');
+
+      const depTime = new Date(parseInt(depParts[0]), parseInt(depParts[1]) - 1, parseInt(depParts[2])).getTime();
+      const arrTime = new Date(parseInt(arrParts[0]), parseInt(arrParts[1]) - 1, parseInt(arrParts[2])).getTime();
+
+      const overlapStart = Math.max(depTime, startTime);
+      const overlapEnd = Math.min(arrTime, endTime);
 
       if (overlapStart < overlapEnd) {
         const diffTime = overlapEnd - overlapStart;
-        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        // Subtract only the days spent entirely outside
-        daysOutside += Math.max(0, diffDays - 1);
+        console.log(`Trip ${index} overlaps! Days outside added: ${diffDays}`);
+        daysOutside += diffDays;
       }
     });
 
     const totalDaysInPeriod = Math.round((endTime - startTime) / (1000 * 60 * 60 * 24));
     const finalInNZ = totalDaysInPeriod - daysOutside;
 
-    return isNaN(finalInNZ) ? 0 : Math.max(0, Math.floor(finalInNZ));
+    console.log("Total Period Days:", totalDaysInPeriod, "Final In NZ:", finalInNZ);
+    return isNaN(finalInNZ) ? 0 : Math.max(0, finalInNZ);
   };
 
   const daysY2 = getInNZDays(year2Start, appDate);
