@@ -129,40 +129,32 @@ function render() {
 
   // Helper function to calculate days in NZ within a period
   const getInNZDays = (start, end) => {
-    if (!(start instanceof Date) || isNaN(start.getTime()) ||
-      !(end instanceof Date) || isNaN(end.getTime())) {
-      return 0;
-    }
+    // Explicitly convert to timestamp for comparison
+    const startTime = start.getTime();
+    const endTime = end.getTime();
 
     let daysOutside = 0;
 
     trips.forEach(t => {
-      // Parse stored travel dates
       const partsD = t.dep.split('-');
       const partsA = t.arr.split('-');
-      const dep = new Date(parseInt(partsD[0]), parseInt(partsD[1]) - 1, parseInt(partsD[2]));
-      const arr = new Date(parseInt(partsA[0]), parseInt(partsA[1]) - 1, parseInt(partsA[2]));
-
-      if (isNaN(dep.getTime()) || isNaN(arr.getTime())) return;
+      const dep = new Date(parseInt(partsD[0]), parseInt(partsD[1]) - 1, parseInt(partsD[2])).getTime();
+      const arr = new Date(parseInt(partsA[0]), parseInt(partsA[1]) - 1, parseInt(partsA[2])).getTime();
 
       // Calculate intersection between the trip and the current window
-      const overlapStart = new Date(Math.max(dep, start));
-      const overlapEnd = new Date(Math.min(arr, end));
+      const overlapStart = Math.max(dep, startTime);
+      const overlapEnd = Math.min(arr, endTime);
 
       if (overlapStart < overlapEnd) {
         const diffTime = overlapEnd - overlapStart;
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-        // INZ Rule: Departure and Arrival days are counted as days IN New Zealand.
-        // Subtract only the days spent entirely outside (diffDays - 1).
+        // Subtract only the days spent entirely outside
         daysOutside += Math.max(0, diffDays - 1);
       }
     });
 
-    // Calculate total days in the period (e.g. 365)
-    const totalDaysInPeriod = Math.round((end - start) / (1000 * 60 * 60 * 24));
-
-    // Calculate final days in NZ
+    const totalDaysInPeriod = Math.round((endTime - startTime) / (1000 * 60 * 60 * 24));
     const finalInNZ = totalDaysInPeriod - daysOutside;
 
     return isNaN(finalInNZ) ? 0 : Math.max(0, Math.floor(finalInNZ));
